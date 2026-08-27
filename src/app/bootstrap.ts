@@ -5,6 +5,8 @@ import { PuzzleShellRenderer } from '../ui/PuzzleShellRenderer'
 import { CubeViewportController } from '../render/cubeViewportController'
 import { generateScrambleMoves } from '../utils/scramble'
 
+const PERSISTED_SIZE_KEY = 'rubiksCube.selectedDimension'
+
 export function bootstrapApp(): void {
   const root = document.querySelector<HTMLDivElement>('#app')
   if (!root) {
@@ -40,12 +42,14 @@ export function bootstrapApp(): void {
   }
 
   const viewportController = new CubeViewportController(canvasHost)
-  const initialDimension = Number(sizeSelect.value)
+  const initialDimension = restorePersistedDimension(sizeSelect)
 
   let moveCount = 0
   let elapsedSeconds = 0
   let hasActiveSolve = false
   let isScrambling = false
+  let controlsLocked = false
+  let lastKnownSolvedState = true
   let timerHandle: number | null = null
 
   const clearTimer = (): void => {
@@ -65,13 +69,43 @@ export function bootstrapApp(): void {
     moveCount = 0
     elapsedSeconds = 0
     hasActiveSolve = false
+    lastKnownSolvedState = true
     solveStatus.textContent = ''
     renderStats()
   }
 
-  viewportController.setStepDelay(Number(turnSpeedInput.value))
+  const applyTurnSpeedInput = (): void => {
+    const value = Number(turnSpeedInput.value)
+    viewportController.setStepDelay(value)
+  }
+
+  const setControlsLocked = (locked: boolean): void => {
+    controlsLocked = locked
+    sizeSelect.disabled = locked
+    scrambleButton.disabled = locked
+    resetCubeButton.disabled = locked
+    turnSpeedInput.disabled = locked
+
+    if (locked) {
+      solveStatus.textContent = isScrambling ? 'Scrambling with queued turns...' : 'Turn animation in progress...'
+    }
+  }
+
+  applyTurnSpeedInput()
+  viewportController.setOnQueueStateChanged((isBusy) => {
+    setControlsLocked(isBusy)
+  })
+
   viewportController.setOnMoveApplied((state, _move, countTowardsStats) => {
+    const solvedNow = isSolvedCubeState(state)
+
     if (countTowardsStats) {
+      // Starting a new attempt from solved state should reset prior attempt stats.
+      if (lastKnownSolvedState) {
+        moveCount = 0
+        elapsedSeconds = 0
+      }
+
       moveCount += 1
 
       if (!hasActiveSolve) {
@@ -86,20 +120,29 @@ export function bootstrapApp(): void {
 
     renderStats()
 
-    if (hasActiveSolve && !isScrambling && isSolvedCubeState(state)) {
+    if (hasActiveSolve && !isScrambling && solvedNow) {
       hasActiveSolve = false
       clearTimer()
       solveStatus.textContent = `Solved in ${moveCount} moves at ${formatElapsedTime(elapsedSeconds)}.`
     }
+
+    lastKnownSolvedState = solvedNow
   })
 
   resetSession()
   viewportController.renderSolvedCube(initialDimension)
+  lastKnownSolvedState = true
 
   sizeSelect.addEventListener('change', () => {
+    if (controlsLocked) {
+      return
+    }
+
     resetSession()
     const nextDimension = Number(sizeSelect.value)
     viewportController.renderSolvedCube(nextDimension)
+    lastKnownSolvedState = true
+    persistSelectedDimension(nextDimension)
 
     const matchingPreset = config.presets.find((preset) => preset.dimension === nextDimension)
     if (matchingPreset) {
@@ -107,11 +150,15 @@ export function bootstrapApp(): void {
     }
   })
 
-  turnSpeedInput.addEventListener('change', () => {
-    viewportController.setStepDelay(Number(turnSpeedInput.value))
-  })
+  turnSpeedInput.addEventListener('input', applyTurnSpeedInput)
+  turnSpeedInput.addEventListener('change', applyTurnSpeedInput)
+  turnSpeedInput.addEventListener('blur', applyTurnSpeedInput)
 
   scrambleButton.addEventListener('click', () => {
+    if (controlsLocked) {
+      return
+    }
+
     const dimension = Number(sizeSelect.value)
     const matchingPreset =
       config.presets.find((preset) => preset.dimension === dimension) ?? getDefaultPreset(config)
@@ -120,6 +167,7 @@ export function bootstrapApp(): void {
     isScrambling = true
     solveStatus.textContent = `Scrambling with ${matchingPreset.scrambleLength} moves...`
     viewportController.renderSolvedCube(dimension)
+    lastKnownSolvedState = true
     viewportController.playMoves(generateScrambleMoves(dimension, matchingPreset.scrambleLength), {
       countTowardsStats: false,
       onComplete: () => {
@@ -130,11 +178,35 @@ export function bootstrapApp(): void {
   })
 
   resetCubeButton.addEventListener('click', () => {
+    if (controlsLocked) {
+      return
+    }
+
     resetSession()
     const nextDimension = Number(sizeSelect.value)
     viewportController.renderSolvedCube(nextDimension)
+    lastKnownSolvedState = true
     solveStatus.textContent = 'Cube reset to solved state.'
   })
+}
+
+function restorePersistedDimension(sizeSelect: HTMLSelectElement): number {
+  const persistedValue = window.localStorage.getItem(PERSISTED_SIZE_KEY)
+  if (!persistedValue) {
+    return Number(sizeSelect.value)
+  }
+
+  const hasMatchingOption = Array.from(sizeSelect.options).some((option) => option.value === persistedValue)
+  if (!hasMatchingOption) {
+    return Number(sizeSelect.value)
+  }
+
+  sizeSelect.value = persistedValue
+  return Number(persistedValue)
+}
+
+function persistSelectedDimension(dimension: number): void {
+  window.localStorage.setItem(PERSISTED_SIZE_KEY, String(dimension))
 }
 
 function formatElapsedTime(totalSeconds: number): string {
