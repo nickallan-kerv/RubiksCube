@@ -14,12 +14,22 @@ const STICKER_COLORS: Record<StickerColor, string> = {
 }
 
 const INTERNAL_COLOR = '#1f2327'
+const CUBIE_GEOMETRY = new BoxGeometry(0.95, 0.95, 0.95)
+
+const MATERIAL_CACHE: Record<StickerColor | 'INTERNAL', MeshStandardMaterial> = {
+  W: new MeshStandardMaterial({ color: new Color(STICKER_COLORS.W) }),
+  Y: new MeshStandardMaterial({ color: new Color(STICKER_COLORS.Y) }),
+  O: new MeshStandardMaterial({ color: new Color(STICKER_COLORS.O) }),
+  R: new MeshStandardMaterial({ color: new Color(STICKER_COLORS.R) }),
+  G: new MeshStandardMaterial({ color: new Color(STICKER_COLORS.G) }),
+  B: new MeshStandardMaterial({ color: new Color(STICKER_COLORS.B) }),
+  INTERNAL: new MeshStandardMaterial({ color: new Color(INTERNAL_COLOR) }),
+}
 
 export function createCubeGroupFromState(state: CubeState): Group {
   const group = new Group()
   const spacing = 1.02
   const offset = (state.dimension - 1) / 2
-  const geometry = new BoxGeometry(0.95, 0.95, 0.95)
 
   for (let x = 0; x < state.dimension; x += 1) {
     for (let y = 0; y < state.dimension; y += 1) {
@@ -30,11 +40,10 @@ export function createCubeGroupFromState(state: CubeState): Group {
 
         const faceMaterials = FACE_ORDER.map((face) => {
           const sticker = getStickerColor(state, face, x, y, z)
-          const color = sticker ? STICKER_COLORS[sticker] : INTERNAL_COLOR
-          return new MeshStandardMaterial({ color: new Color(color) })
+          return sticker ? MATERIAL_CACHE[sticker] : MATERIAL_CACHE.INTERNAL
         })
 
-        const cubie = new Mesh(geometry, faceMaterials as Material[])
+        const cubie = new Mesh(CUBIE_GEOMETRY, faceMaterials as Material[])
         cubie.position.set((x - offset) * spacing, (y - offset) * spacing, (z - offset) * spacing)
         group.add(cubie)
       }
