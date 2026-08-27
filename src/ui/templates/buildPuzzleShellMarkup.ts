@@ -18,8 +18,8 @@ export function buildPuzzleShellMarkup(config: PuzzleRuntimeConfig): string {
         <h1>Rubik's Cube Lab</h1>
       </div>
       <div class="status-strip" aria-live="polite">
-        <span>Moves: 0</span>
-        <span>Time: 00:00</span>
+        <span id="moves-status">Moves: 0</span>
+        <span id="time-status">Time: 00:00</span>
       </div>
     </header>
 
@@ -33,10 +33,12 @@ export function buildPuzzleShellMarkup(config: PuzzleRuntimeConfig): string {
         <label for="turn-speed">Turn Animation (ms)</label>
         <input id="turn-speed" name="turn-speed" type="number" min="100" max="500" step="10" value="${config.turnAnimationMs}" />
 
-        <button id="demo-turns" type="button">Scramble (Demo)</button>
+        <button id="scramble-cube" type="button">Scramble</button>
         <button id="reset-cube" type="button" class="ghost">Reset</button>
 
         <p class="hint">Default scramble for ${defaultPreset.label}: ${defaultPreset.scrambleLength} moves.</p>
+        <p class="hint">Left-drag on a cube face to turn. Right-drag to orbit camera. Mouse wheel to zoom.</p>
+        <p id="solve-status" class="hint"></p>
       </aside>
 
       <section class="scene-card" aria-label="3D puzzle viewport">
