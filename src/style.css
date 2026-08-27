@@ -105,6 +105,21 @@ h1 {
   gap: 0.6rem;
 }
 
+.controls-fieldset {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.controls-fieldset legend {
+  font-size: 0.9rem;
+  color: var(--muted);
+  margin-bottom: 0.1rem;
+}
+
 .control-panel label {
   font-size: 0.9rem;
   color: var(--muted);
@@ -136,6 +151,13 @@ h1 {
   background: #fff;
   color: var(--accent-ink);
   border-color: #d4bcab;
+}
+
+.control-panel select:disabled,
+.control-panel input:disabled,
+.control-panel button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
 .hint {
