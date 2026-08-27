@@ -58,6 +58,22 @@ export class ThreeSceneManager {
     this.render()
   }
 
+  public getCamera(): PerspectiveCamera {
+    return this.camera
+  }
+
+  public getCanvasElement(): HTMLCanvasElement {
+    return this.renderer.domElement
+  }
+
+  public getContentGroup(): Group | null {
+    return this.contentGroup
+  }
+
+  public requestRender(): void {
+    this.render()
+  }
+
   public dispose(): void {
     this.resizeObserver.disconnect()
     this.renderer.dispose()
