@@ -1,18 +1,47 @@
 import { createSolvedCubeState } from '../domain/cubeState'
 import { applyMove } from '../domain/cubeMoveEngine'
 import { createMove, type CubeMove } from '../domain/cubeNotation'
+import { type Mesh } from 'three'
 import { createCubeGroupFromState } from './cubieMeshFactory'
+import { FaceTurnInteractionController } from './faceTurnInteractionController'
 import { ThreeSceneManager } from './threeSceneManager'
+import type { CubeState } from '../domain/cubeState'
+
+interface QueuedMove {
+  move: CubeMove
+  countTowardsStats: boolean
+  onComplete?: () => void
+}
+
+interface PlayMoveOptions {
+  countTowardsStats?: boolean
+  onComplete?: () => void
+}
+
+type MoveAppliedHandler = (state: CubeState, move: CubeMove, countTowardsStats: boolean) => void
 
 export class CubeViewportController {
   private readonly sceneManager: ThreeSceneManager
+  private readonly interactionController: FaceTurnInteractionController
   private currentState = createSolvedCubeState(3)
-  private readonly moveQueue: CubeMove[] = []
+  private readonly moveQueue: QueuedMove[] = []
   private isProcessingQueue = false
   private stepDelayMs = 240
+  private onMoveApplied: MoveAppliedHandler | null = null
 
   public constructor(container: HTMLElement) {
     this.sceneManager = new ThreeSceneManager(container)
+    this.interactionController = new FaceTurnInteractionController(
+      this.sceneManager.getCanvasElement(),
+      this.sceneManager.getCamera(),
+      () => this.getTurnTargets(),
+      (move) => this.playMoves([move], { countTowardsStats: true }),
+      () => this.sceneManager.requestRender(),
+    )
+  }
+
+  public setOnMoveApplied(handler: MoveAppliedHandler): void {
+    this.onMoveApplied = handler
   }
 
   public renderSolvedCube(dimension: number): void {
@@ -42,11 +71,29 @@ export class CubeViewportController {
       createMove('R', innerLayer, 'CW'),
     ]
 
-    this.enqueueMoves(sequence)
+    this.playMoves(sequence, { countTowardsStats: false })
   }
 
-  private enqueueMoves(moves: CubeMove[]): void {
-    this.moveQueue.push(...moves)
+  public playMoves(moves: CubeMove[], options: PlayMoveOptions = {}): void {
+    if (moves.length === 0) {
+      options.onComplete?.()
+      return
+    }
+
+    const countTowardsStats = options.countTowardsStats ?? true
+
+    moves.forEach((move, index) => {
+      const queueItem: QueuedMove = {
+        move,
+        countTowardsStats,
+      }
+
+      if (index === moves.length - 1 && options.onComplete) {
+        queueItem.onComplete = options.onComplete
+      }
+
+      this.moveQueue.push(queueItem)
+    })
 
     if (!this.isProcessingQueue) {
       this.processQueue()
@@ -54,15 +101,17 @@ export class CubeViewportController {
   }
 
   private processQueue(): void {
-    const nextMove = this.moveQueue.shift()
-    if (!nextMove) {
+    const nextQueueItem = this.moveQueue.shift()
+    if (!nextQueueItem) {
       this.isProcessingQueue = false
       return
     }
 
     this.isProcessingQueue = true
-    this.currentState = applyMove(this.currentState, nextMove)
+    this.currentState = applyMove(this.currentState, nextQueueItem.move)
     this.renderCurrentState()
+    this.onMoveApplied?.(this.currentState, nextQueueItem.move, nextQueueItem.countTowardsStats)
+    nextQueueItem.onComplete?.()
 
     window.setTimeout(() => {
       this.processQueue()
@@ -74,7 +123,17 @@ export class CubeViewportController {
     this.sceneManager.setContent(group)
   }
 
+  private getTurnTargets(): Mesh[] {
+    const group = this.sceneManager.getContentGroup()
+    if (!group) {
+      return []
+    }
+
+    return group.children.filter((child): child is Mesh => child.type === 'Mesh')
+  }
+
   public dispose(): void {
+    this.interactionController.dispose()
     this.sceneManager.dispose()
   }
 }
