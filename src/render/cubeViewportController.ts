@@ -19,6 +19,7 @@ interface PlayMoveOptions {
 }
 
 type MoveAppliedHandler = (state: CubeState, move: CubeMove, countTowardsStats: boolean) => void
+type QueueStateHandler = (isBusy: boolean) => void
 
 export class CubeViewportController {
   private readonly sceneManager: ThreeSceneManager
@@ -28,6 +29,7 @@ export class CubeViewportController {
   private isProcessingQueue = false
   private stepDelayMs = 240
   private onMoveApplied: MoveAppliedHandler | null = null
+  private onQueueStateChanged: QueueStateHandler | null = null
 
   public constructor(container: HTMLElement) {
     this.sceneManager = new ThreeSceneManager(container)
@@ -36,6 +38,7 @@ export class CubeViewportController {
       this.sceneManager.getCamera(),
       () => this.getTurnTargets(),
       (move) => this.playMoves([move], { countTowardsStats: true }),
+      () => !this.isBusy(),
       () => this.sceneManager.requestRender(),
     )
   }
@@ -44,11 +47,24 @@ export class CubeViewportController {
     this.onMoveApplied = handler
   }
 
+  public setOnQueueStateChanged(handler: QueueStateHandler): void {
+    this.onQueueStateChanged = handler
+    handler(this.isBusy())
+  }
+
+  public isBusy(): boolean {
+    return this.isProcessingQueue || this.moveQueue.length > 0
+  }
+
   public renderSolvedCube(dimension: number): void {
+    const wasBusy = this.isBusy()
     this.currentState = createSolvedCubeState(dimension)
     this.moveQueue.length = 0
     this.isProcessingQueue = false
     this.renderCurrentState()
+    if (wasBusy) {
+      this.onQueueStateChanged?.(false)
+    }
   }
 
   public setStepDelay(stepDelayMs: number): void {
@@ -80,6 +96,8 @@ export class CubeViewportController {
       return
     }
 
+    const wasBusy = this.isBusy()
+
     const countTowardsStats = options.countTowardsStats ?? true
 
     moves.forEach((move, index) => {
@@ -95,6 +113,10 @@ export class CubeViewportController {
       this.moveQueue.push(queueItem)
     })
 
+    if (!wasBusy) {
+      this.onQueueStateChanged?.(true)
+    }
+
     if (!this.isProcessingQueue) {
       this.processQueue()
     }
@@ -104,6 +126,7 @@ export class CubeViewportController {
     const nextQueueItem = this.moveQueue.shift()
     if (!nextQueueItem) {
       this.isProcessingQueue = false
+      this.onQueueStateChanged?.(false)
       return
     }
 
