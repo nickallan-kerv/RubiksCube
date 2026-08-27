@@ -15,15 +15,18 @@ interface DragStart {
   clientX: number
   clientY: number
   face: FaceName
+  layer: number
 }
 
 const DRAG_THRESHOLD_PX = 10
+const AXIS_TOLERANCE = 0.001
 
 export class FaceTurnInteractionController {
   private readonly canvas: HTMLCanvasElement
   private readonly camera: PerspectiveCamera
   private readonly getTurnTargets: () => Mesh[]
   private readonly onFaceTurn: (move: CubeMove) => void
+  private readonly canStartTurn: () => boolean
   private readonly requestRender: () => void
   private readonly raycaster = new Raycaster()
   private readonly pointer = new Vector2()
@@ -35,12 +38,14 @@ export class FaceTurnInteractionController {
     camera: PerspectiveCamera,
     getTurnTargets: () => Mesh[],
     onFaceTurn: (move: CubeMove) => void,
+    canStartTurn: () => boolean,
     requestRender: () => void,
   ) {
     this.canvas = canvas
     this.camera = camera
     this.getTurnTargets = getTurnTargets
     this.onFaceTurn = onFaceTurn
+    this.canStartTurn = canStartTurn
     this.requestRender = requestRender
 
     this.controls = new OrbitControls(this.camera, this.canvas)
@@ -70,16 +75,24 @@ export class FaceTurnInteractionController {
       return
     }
 
+    if (!this.canStartTurn()) {
+      this.dragStart = null
+      return
+    }
+
     const intersection = this.getIntersection(event.clientX, event.clientY)
     if (!intersection) {
       this.dragStart = null
       return
     }
 
+    const face = this.extractFaceFromIntersection(intersection)
+
     this.dragStart = {
       clientX: event.clientX,
       clientY: event.clientY,
-      face: this.extractFaceFromIntersection(intersection),
+      face,
+      layer: this.extractLayerFromIntersection(intersection, face),
     }
   }
 
@@ -100,7 +113,7 @@ export class FaceTurnInteractionController {
     }
 
     const direction = inferTurnDirection(start.face, deltaX, deltaY)
-    const move = createMove(start.face, 0, direction)
+    const move = createMove(start.face, start.layer, direction)
     this.onFaceTurn(move)
   }
 
@@ -143,6 +156,87 @@ export class FaceTurnInteractionController {
 
     return worldNormal.z >= 0 ? 'F' : 'B'
   }
+
+  private extractLayerFromIntersection(intersection: Intersection<Object3D>, face: FaceName): number {
+    const mesh = intersection.object as Mesh
+    const axis = getAxisForFace(face)
+    const axisValue = getAxisValue(mesh.position, axis)
+    const axisValues = getSortedUniqueAxisValues(this.getTurnTargets(), axis)
+
+    if (axisValues.length <= 1) {
+      return 0
+    }
+
+    const axisIndex = findNearestAxisIndex(axisValues, axisValue)
+    return mapAxisIndexToLayer(face, axisIndex, axisValues.length)
+  }
+}
+
+type Axis = 'x' | 'y' | 'z'
+
+function getAxisForFace(face: FaceName): Axis {
+  if (face === 'L' || face === 'R') {
+    return 'x'
+  }
+
+  if (face === 'U' || face === 'D') {
+    return 'y'
+  }
+
+  return 'z'
+}
+
+function getAxisValue(position: { x: number; y: number; z: number }, axis: Axis): number {
+  if (axis === 'x') {
+    return position.x
+  }
+
+  if (axis === 'y') {
+    return position.y
+  }
+
+  return position.z
+}
+
+function getSortedUniqueAxisValues(meshes: Mesh[], axis: Axis): number[] {
+  const sortedValues = meshes
+    .map((mesh) => getAxisValue(mesh.position, axis))
+    .sort((left, right) => left - right)
+
+  const uniqueValues: number[] = []
+  for (const value of sortedValues) {
+    if (uniqueValues.length === 0 || Math.abs(value - uniqueValues[uniqueValues.length - 1]) > AXIS_TOLERANCE) {
+      uniqueValues.push(value)
+    }
+  }
+
+  return uniqueValues
+}
+
+function findNearestAxisIndex(axisValues: number[], axisValue: number): number {
+  let nearestIndex = 0
+  let nearestDistance = Number.POSITIVE_INFINITY
+
+  axisValues.forEach((value, index) => {
+    const distance = Math.abs(value - axisValue)
+    if (distance < nearestDistance) {
+      nearestDistance = distance
+      nearestIndex = index
+    }
+  })
+
+  return nearestIndex
+}
+
+export function mapAxisIndexToLayer(face: FaceName, axisIndex: number, axisCount: number): number {
+  const maxAxisIndex = Math.max(0, axisCount - 1)
+  const clampedAxisIndex = Math.max(0, Math.min(axisIndex, maxAxisIndex))
+
+  if (face === 'R' || face === 'U' || face === 'F') {
+    return maxAxisIndex - clampedAxisIndex
+  }
+
+  return clampedAxisIndex
 }
 
 function inferTurnDirection(face: FaceName, deltaX: number, deltaY: number): TurnDirection {
