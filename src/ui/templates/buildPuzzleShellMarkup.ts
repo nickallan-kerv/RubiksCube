@@ -33,16 +33,14 @@ export function buildPuzzleShellMarkup(config: PuzzleRuntimeConfig): string {
         <label for="turn-speed">Turn Animation (ms)</label>
         <input id="turn-speed" name="turn-speed" type="number" min="100" max="500" step="10" value="${config.turnAnimationMs}" />
 
-        <button type="button">Scramble</button>
-        <button type="button" class="ghost">Reset</button>
+        <button id="demo-turns" type="button">Scramble (Demo)</button>
+        <button id="reset-cube" type="button" class="ghost">Reset</button>
 
         <p class="hint">Default scramble for ${defaultPreset.label}: ${defaultPreset.scrambleLength} moves.</p>
       </aside>
 
       <section class="scene-card" aria-label="3D puzzle viewport">
-        <div id="cube-canvas" class="canvas-placeholder">
-          <p>3D viewport initializes here in Sprint 3.</p>
-        </div>
+        <div id="cube-canvas" class="canvas-placeholder"></div>
       </section>
     </section>
   </main>
