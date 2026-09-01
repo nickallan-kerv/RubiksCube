@@ -7,6 +7,8 @@ import {
   Scene,
   WebGLRenderer,
 } from 'three'
+import type { CubeMove } from '../domain/cubeNotation'
+import { easeInOutCubic, isCubieInTurnLayer, moveToPhysicalTurn } from './cubeTurnAnimation'
 
 export class ThreeSceneManager {
   private readonly container: HTMLElement
@@ -15,6 +17,7 @@ export class ThreeSceneManager {
   private readonly renderer: WebGLRenderer
   private contentGroup: Group | null
   private readonly resizeObserver: ResizeObserver
+  private cancelActiveAnimation: (() => void) | null = null
 
   public constructor(container: HTMLElement) {
     this.container = container
@@ -75,7 +78,93 @@ export class ThreeSceneManager {
     this.render()
   }
 
+  public animateLayerTurn(move: CubeMove, dimension: number, durationMs: number): Promise<boolean> {
+    this.cancelLayerTurn()
+    const contentGroup = this.contentGroup
+    if (!contentGroup) {
+      return Promise.resolve(false)
+    }
+
+    const turn = moveToPhysicalTurn(move, dimension)
+    const affectedCubies = contentGroup.children.filter((cubie) => isCubieInTurnLayer(cubie, turn))
+    if (affectedCubies.length === 0) {
+      return Promise.resolve(false)
+    }
+
+    const pivot = new Group()
+    contentGroup.add(pivot)
+    for (const cubie of affectedCubies) {
+      contentGroup.remove(cubie)
+      pivot.add(cubie)
+    }
+
+    const reducedMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false
+    const effectiveDuration = reducedMotion ? 0 : Math.max(0, durationMs)
+
+    return new Promise((resolve) => {
+      let animationFrame = 0
+      let startTime: number | null = null
+      let settled = false
+
+      const restoreOriginalCubieTransforms = (): void => {
+        for (const cubie of affectedCubies) {
+          pivot.remove(cubie)
+          contentGroup.add(cubie)
+        }
+        contentGroup.remove(pivot)
+      }
+
+      const finish = (completed: boolean): void => {
+        if (settled) {
+          return
+        }
+
+        settled = true
+        if (animationFrame !== 0) {
+          cancelAnimationFrame(animationFrame)
+        }
+        restoreOriginalCubieTransforms()
+        this.cancelActiveAnimation = null
+        if (!completed) {
+          this.render()
+        }
+        resolve(completed)
+      }
+
+      this.cancelActiveAnimation = () => finish(false)
+
+      if (effectiveDuration === 0) {
+        pivot.rotation[turn.axis] = turn.angleRadians
+        this.render()
+        finish(true)
+        return
+      }
+
+      const animateFrame = (timestamp: number): void => {
+        startTime ??= timestamp
+        const progress = Math.min(1, (timestamp - startTime) / effectiveDuration)
+        pivot.rotation[turn.axis] = turn.angleRadians * easeInOutCubic(progress)
+        this.render()
+
+        if (progress >= 1) {
+          animationFrame = 0
+          finish(true)
+          return
+        }
+
+        animationFrame = requestAnimationFrame(animateFrame)
+      }
+
+      animationFrame = requestAnimationFrame(animateFrame)
+    })
+  }
+
+  public cancelLayerTurn(): void {
+    this.cancelActiveAnimation?.()
+  }
+
   public dispose(): void {
+    this.cancelLayerTurn()
     this.resizeObserver.disconnect()
     this.renderer.dispose()
   }
