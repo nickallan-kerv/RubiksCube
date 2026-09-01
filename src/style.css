@@ -346,28 +346,55 @@ h1 {
     padding: 0.5rem;
   }
 
+  .app-shell {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(190px, 210px);
+    grid-template-rows: auto 1fr;
+    column-gap: 0.65rem;
+  }
+
   .top-bar {
-    margin-bottom: 0.5rem;
+    grid-column: 2;
+    grid-row: 1;
+    margin: 0 0 0.5rem;
+  }
+
+  .title-controls {
+    width: 100%;
+    gap: 0.4rem;
+  }
+
+  .title-controls h1 {
+    font-size: 1.2rem;
+  }
+
+  .title-suffix {
+    display: none;
+  }
+
+  .title-controls select {
+    flex: 1;
+    max-width: none;
+    padding: 0.42rem 0.45rem;
   }
 
   .workspace {
-    grid-template-columns: minmax(0, 1fr) minmax(190px, 210px);
-    gap: 0.65rem;
+    display: contents;
   }
 
   .scene-card {
     grid-column: 1;
-    grid-row: 1;
+    grid-row: 1 / span 2;
   }
 
   .control-panel {
     grid-column: 2;
-    grid-row: 1;
+    grid-row: 2;
   }
 
   .canvas-placeholder {
-    height: calc(100svh - 4.75rem);
-    min-height: 260px;
+    height: calc(100svh - 1rem);
+    min-height: 300px;
   }
 
   .history-picker-wrap {
