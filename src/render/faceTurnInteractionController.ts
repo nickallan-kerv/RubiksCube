@@ -1,6 +1,7 @@
 import {
   BufferGeometry,
   MOUSE,
+  TOUCH,
   Matrix4,
   Raycaster,
   Vector2,
@@ -69,6 +70,7 @@ export class FaceTurnInteractionController {
   private readonly pointer = new Vector2()
   private readonly controls: OrbitControls
   private dragStart: DragStart | null = null
+  private readonly activeTouchPointers = new Set<number>()
 
   public constructor(
     canvas: HTMLCanvasElement,
@@ -96,6 +98,8 @@ export class FaceTurnInteractionController {
     this.controls.mouseButtons.LEFT = null
     this.controls.mouseButtons.RIGHT = null
     this.controls.mouseButtons.MIDDLE = MOUSE.ROTATE
+    this.controls.touches.ONE = TOUCH.PAN
+    this.controls.touches.TWO = TOUCH.DOLLY_ROTATE
     this.controls.addEventListener('change', () => this.requestRender())
 
     this.canvas.addEventListener('pointerdown', this.handlePointerDown)
@@ -113,6 +117,15 @@ export class FaceTurnInteractionController {
   }
 
   private handlePointerDown = (event: PointerEvent): void => {
+    if (event.pointerType === 'touch') {
+      this.activeTouchPointers.add(event.pointerId)
+      if (this.activeTouchPointers.size > 1) {
+        this.clearDrag()
+        this.onDebug?.({ phase: 'cancel' })
+        return
+      }
+    }
+
     if (event.button !== 0) {
       return
     }
@@ -189,6 +202,10 @@ export class FaceTurnInteractionController {
   }
 
   private handlePointerUp = (event: PointerEvent): void => {
+    if (event.pointerType === 'touch') {
+      this.activeTouchPointers.delete(event.pointerId)
+    }
+
     const start = this.dragStart
     if (!start || event.pointerId !== start.pointerId || event.button !== 0) {
       return
@@ -209,6 +226,10 @@ export class FaceTurnInteractionController {
   }
 
   private handlePointerCancel = (event: PointerEvent): void => {
+    if (event.pointerType === 'touch') {
+      this.activeTouchPointers.delete(event.pointerId)
+    }
+
     if (this.dragStart && event.pointerId !== this.dragStart.pointerId) {
       return
     }
