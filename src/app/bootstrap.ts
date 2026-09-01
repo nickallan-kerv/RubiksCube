@@ -36,8 +36,7 @@ export function bootstrapApp(): void {
   const moveHistoryPicker = root.querySelector<HTMLElement>('#move-history-picker')
   const moveHistoryList = root.querySelector<HTMLOListElement>('#move-history-list')
   const interactionDebug = root.querySelector<HTMLElement>('#interaction-debug')
-  const movesStatus = root.querySelector<HTMLElement>('#moves-status')
-  const timeStatus = root.querySelector<HTMLElement>('#time-status')
+  const statsStatus = root.querySelector<HTMLElement>('#stats-status')
   const solveStatus = root.querySelector<HTMLElement>('#solve-status')
 
   if (
@@ -47,9 +46,8 @@ export function bootstrapApp(): void {
     !resetCubeButton ||
     !moveHistoryPicker ||
     !moveHistoryList ||
-    !interactionDebug ||
-    !movesStatus ||
-    !timeStatus ||
+    (config.interactionDebugEnabled && !interactionDebug) ||
+    !statsStatus ||
     !solveStatus
   ) {
     throw new Error('Missing required UI elements for cube viewport initialization.')
@@ -144,7 +142,9 @@ export function bootstrapApp(): void {
       lines.push(`threshold: ${effectiveSnapshot.thresholdPx}px`)
     }
 
-    interactionDebug.textContent = lines.join('\n')
+    if (interactionDebug) {
+      interactionDebug.textContent = lines.join('\n')
+    }
   }
 
   const clearTimer = (): void => {
@@ -155,8 +155,7 @@ export function bootstrapApp(): void {
   }
 
   const renderStats = (): void => {
-    movesStatus.textContent = `Moves: ${moveCount}`
-    timeStatus.textContent = `Time: ${formatElapsedTime(elapsedSeconds)}`
+    statsStatus.textContent = `Moves: ${moveCount} Time: ${formatElapsedTime(elapsedSeconds)}`
   }
 
   const resetSession = (): void => {
@@ -203,7 +202,10 @@ export function bootstrapApp(): void {
     })
 
     const activeItem = moveHistoryList.querySelector<HTMLButtonElement>('button.history-item.is-active')
-    activeItem?.scrollIntoView({ block: 'nearest' })
+    if (activeItem) {
+      const targetTop = activeItem.offsetTop - (moveHistoryPicker.clientHeight - activeItem.offsetHeight) / 2
+      moveHistoryPicker.scrollTop = Math.max(0, targetTop)
+    }
   }
 
   const setHistoryBaseline = (label: string, state: CubeState): void => {
@@ -447,7 +449,7 @@ export function bootstrapApp(): void {
       cancelHistoryMomentum()
       historyMomentumVelocity = 0
       historyStepCarry = 0
-      solveStatus.textContent = isScrambling ? 'Scrambling with queued turns...' : 'Turn animation in progress...'
+      solveStatus.textContent = isScrambling ? 'Scrambling with queued turns...' : ''
     }
 
     renderMoveHistory()
@@ -457,9 +459,9 @@ export function bootstrapApp(): void {
     setControlsLocked(isBusy)
   })
 
-  viewportController.setOnInteractionDebug((snapshot) => {
-    renderInteractionDebug(snapshot)
-  })
+  if (config.interactionDebugEnabled) {
+    viewportController.setOnInteractionDebug(renderInteractionDebug)
+  }
 
   viewportController.setOnMoveApplied((state, _move, countTowardsStats) => {
     const solvedNow = isSolvedCubeState(state)
