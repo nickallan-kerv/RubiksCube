@@ -132,7 +132,7 @@ export class FaceTurnInteractionController {
 
     const mesh = intersection.object as Mesh
     const face = this.extractFaceFromIntersection(intersection)
-    const faceNormalLocal = intersection.face?.normal.clone().normalize() ?? faceNameToNormal(face)
+    const faceNormalLocal = faceNameToNormal(face)
     const rect = this.canvas.getBoundingClientRect()
     mesh.parent?.updateWorldMatrix(true, false)
     this.camera.updateMatrixWorld()
