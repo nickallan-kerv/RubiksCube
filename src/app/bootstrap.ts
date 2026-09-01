@@ -92,7 +92,7 @@ export function bootstrapApp(): void {
         : `phase: ${effectiveSnapshot.phase}`,
     ]
     lines.push(`dimension: ${dimension}`)
-    lines.push('slice mode: position-based (outer + middle)')
+    lines.push('slice mode: projected tangent')
 
     const isMoveIntentPhase = effectiveSnapshot.phase === 'drag' || effectiveSnapshot.phase === 'up'
     if (isMoveIntentPhase) {
@@ -128,12 +128,8 @@ export function bootstrapApp(): void {
       lines.push(`direction: ${effectiveSnapshot.direction}`)
     }
 
-    if (effectiveSnapshot.faceKey !== undefined) {
-      lines.push(`face key: ${effectiveSnapshot.faceKey}`)
-    }
-
-    if (effectiveSnapshot.dragAxis !== undefined) {
-      lines.push(`drag axis: ${effectiveSnapshot.dragAxis}`)
+    if (effectiveSnapshot.tangentAxis !== undefined) {
+      lines.push(`tangent axis: ${effectiveSnapshot.tangentAxis}`)
     }
 
     if (effectiveSnapshot.rotationAxis !== undefined) {
