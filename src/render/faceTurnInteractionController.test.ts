@@ -10,7 +10,7 @@ describe('projectFaceTangents', () => {
   ])('projects two distinct face tangents from camera $position', ({ position, aspect }) => {
     const camera = createCamera(position, aspect)
     const cube = new Group()
-    cube.rotation.set(-Math.PI / 7, Math.PI / 4, 0)
+    cube.rotation.x = Math.PI / 2
     cube.updateMatrixWorld(true)
     const hitPoint = new Vector3(0, 0, 1).applyMatrix4(cube.matrixWorld)
 
@@ -42,6 +42,7 @@ describe('projectFaceTangents', () => {
 
 function createCamera(position: Vector3, aspect: number): PerspectiveCamera {
   const camera = new PerspectiveCamera(38, aspect, 0.1, 100)
+  camera.up.set(0, 0, 1)
   camera.position.copy(position)
   camera.lookAt(0, 0, 0)
   camera.updateProjectionMatrix()
