@@ -116,25 +116,25 @@ function rotatePosition(
 
   if (axis === 'x') {
     if (quarterRotation === 1) {
-      return { x, y: z, z: max - y }
+      return { x, y: max - z, z: y }
     }
 
-    return { x, y: max - z, z: y }
+    return { x, y: z, z: max - y }
   }
 
   if (axis === 'y') {
     if (quarterRotation === 1) {
-      return { x: max - z, y, z: x }
+      return { x: z, y, z: max - x }
     }
 
-    return { x: z, y, z: max - x }
+    return { x: max - z, y, z: x }
   }
 
   if (quarterRotation === 1) {
-    return { x: y, y: max - x, z }
+    return { x: max - y, y: x, z }
   }
 
-  return { x: max - y, y: x, z }
+  return { x: y, y: max - x, z }
 }
 
 function rotateNormal(sticker: Sticker, axis: Axis, quarterRotation: 1 | -1): Pick<Sticker, 'nx' | 'ny' | 'nz'> {
