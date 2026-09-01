@@ -10,7 +10,7 @@ import {
   type Object3D,
   type PerspectiveCamera,
 } from 'three'
-import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
+import { TrackballControls } from 'three/examples/jsm/controls/TrackballControls.js'
 import type { CubeMove, FaceName, TurnDirection } from '../domain/cubeNotation'
 import {
   projectFaceTangents,
@@ -67,8 +67,9 @@ export class FaceTurnInteractionController {
   private readonly requestRender: () => void
   private readonly raycaster = new Raycaster()
   private readonly pointer = new Vector2()
-  private readonly controls: OrbitControls
+  private readonly controls: TrackballControls
   private dragStart: DragStart | null = null
+  private orbitAnimationFrame: number | null = null
 
   public constructor(
     canvas: HTMLCanvasElement,
@@ -87,12 +88,14 @@ export class FaceTurnInteractionController {
     this.onDebug = onDebug
     this.requestRender = requestRender
 
-    this.controls = new OrbitControls(this.camera, this.canvas)
-    this.controls.enableDamping = false
-    this.controls.enablePan = false
+    this.controls = new TrackballControls(this.camera, this.canvas)
+    this.controls.staticMoving = true
+    this.controls.noPan = true
     this.controls.mouseButtons.LEFT = null
     this.controls.mouseButtons.RIGHT = null
     this.controls.mouseButtons.MIDDLE = MOUSE.ROTATE
+    this.controls.addEventListener('start', this.startOrbitUpdates)
+    this.controls.addEventListener('end', this.stopOrbitUpdates)
     this.controls.addEventListener('change', () => this.requestRender())
 
     this.canvas.addEventListener('pointerdown', this.handlePointerDown)
@@ -102,11 +105,34 @@ export class FaceTurnInteractionController {
   }
 
   public dispose(): void {
+    this.stopOrbitUpdates()
+    this.controls.removeEventListener('start', this.startOrbitUpdates)
+    this.controls.removeEventListener('end', this.stopOrbitUpdates)
     this.controls.dispose()
     this.canvas.removeEventListener('pointerdown', this.handlePointerDown)
     this.canvas.removeEventListener('pointermove', this.handlePointerMove)
     this.canvas.removeEventListener('pointerup', this.handlePointerUp)
     this.canvas.removeEventListener('pointercancel', this.handlePointerCancel)
+  }
+
+  private startOrbitUpdates = (): void => {
+    if (this.orbitAnimationFrame !== null) {
+      return
+    }
+
+    const update = (): void => {
+      this.controls.update()
+      this.orbitAnimationFrame = requestAnimationFrame(update)
+    }
+    update()
+  }
+
+  private stopOrbitUpdates = (): void => {
+    if (this.orbitAnimationFrame !== null) {
+      cancelAnimationFrame(this.orbitAnimationFrame)
+      this.orbitAnimationFrame = null
+    }
+    this.controls.update()
   }
 
   private handlePointerDown = (event: PointerEvent): void => {
