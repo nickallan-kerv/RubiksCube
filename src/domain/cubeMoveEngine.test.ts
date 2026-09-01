@@ -53,4 +53,17 @@ describe('cube move engine', () => {
     expect(isSolvedCubeState(restored)).toBe(true)
     expect(restored).toEqual(cube)
   })
+
+  it("keeps sticker positions and normals aligned after L then F'", () => {
+    const state = applyMoves(createSolvedCubeState(3), [
+      createMove('L', 0, 'CW'),
+      createMove('F', 0, 'CCW'),
+    ])
+
+    expect(state.faces.F).toEqual([
+      ['R', 'R', 'R'],
+      ['R', 'R', 'R'],
+      ['W', 'W', 'W'],
+    ])
+  })
 })
