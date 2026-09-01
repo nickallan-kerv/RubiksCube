@@ -25,9 +25,9 @@ export class ThreeSceneManager {
     this.scene.background = new Color('#f6f4ec')
 
     this.camera = new PerspectiveCamera(38, 1, 0.1, 100)
-    // Start in an oblique top/front-left perspective to match the expected default viewport.
-    this.camera.position.set(-0.4, 8.2, 6.9)
-    this.camera.lookAt(0.35, -0.4, 0)
+    this.camera.up.set(0, 0, 1)
+    this.camera.position.set(-6, -8, 7)
+    this.camera.lookAt(0, 0, 0)
 
     this.renderer = new WebGLRenderer({ antialias: true })
     this.renderer.setPixelRatio(window.devicePixelRatio)
