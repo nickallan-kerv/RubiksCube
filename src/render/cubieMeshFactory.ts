@@ -52,8 +52,7 @@ export function createCubeGroupFromState(state: CubeState): Group {
     }
   }
 
-  group.rotation.y = Math.PI / 4
-  group.rotation.x = -Math.PI / 7
+  group.rotation.x = Math.PI / 2
 
   return group
 }
