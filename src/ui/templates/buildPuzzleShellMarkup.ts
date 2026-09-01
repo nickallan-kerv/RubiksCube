@@ -25,23 +25,33 @@ export function buildPuzzleShellMarkup(config: PuzzleRuntimeConfig): string {
 
     <section class="workspace" aria-label="Puzzle workspace">
       <aside class="control-panel" aria-label="Puzzle controls">
-        <fieldset class="controls-fieldset">
-        <legend>Puzzle controls</legend>
-        <label for="cube-size">Cube Size</label>
-        <select id="cube-size" name="cube-size">
-          ${optionsMarkup}
-        </select>
+        <div class="control-row">
+          <label for="cube-size">Cube Size</label>
+          <select id="cube-size" name="cube-size">
+            ${optionsMarkup}
+          </select>
+        </div>
 
-        <label for="turn-speed">Turn Animation (ms)</label>
-        <input id="turn-speed" name="turn-speed" type="number" min="100" max="500" step="10" value="${config.turnAnimationMs}" aria-describedby="turn-speed-hint" />
+        <div class="button-row">
+          <button id="scramble-cube" type="button">Scramble</button>
+          <button id="reset-cube" type="button" class="ghost">Reset</button>
+        </div>
 
-        <button id="scramble-cube" type="button">Scramble</button>
-        <button id="reset-cube" type="button" class="ghost">Reset</button>
-        </fieldset>
+        <section class="history-panel" aria-label="Move history diagnostics">
+          <div class="history-header-row">
+            <h2 class="history-heading">Move History</h2>
+          </div>
+          <div id="move-history-picker" class="history-picker-wrap" role="group" aria-label="History picker">
+            <div class="history-picker-focus-overlay" aria-hidden="true"></div>
+            <ol id="move-history-list" class="history-list history-picker" aria-live="polite"></ol>
+          </div>
+        </section>
 
-        <p class="hint">Default scramble for ${defaultPreset.label}: ${defaultPreset.scrambleLength} moves.</p>
-        <p id="turn-speed-hint" class="hint">Speed applies to queued turns and manual face drags.</p>
-        <p class="hint">Left-drag on a cube face to turn. Right-drag to orbit camera. Mouse wheel to zoom.</p>
+        <section class="debug-panel" aria-label="Temporary interaction debug">
+          <h2 class="history-heading">Debug</h2>
+          <pre id="interaction-debug" class="debug-output">Waiting for input...</pre>
+        </section>
+
         <p id="solve-status" class="hint" role="status" aria-live="polite"></p>
       </aside>
 
