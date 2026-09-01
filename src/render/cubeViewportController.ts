@@ -28,7 +28,8 @@ export class CubeViewportController {
   private currentState = createSolvedCubeState(3)
   private readonly moveQueue: QueuedMove[] = []
   private isProcessingQueue = false
-  private stepDelayMs = 240
+  private turnAnimationMs = 240
+  private queueGeneration = 0
   private onMoveApplied: MoveAppliedHandler | null = null
   private onQueueStateChanged: QueueStateHandler | null = null
   private onInteractionDebug: InteractionDebugHandler | null = null
@@ -69,6 +70,8 @@ export class CubeViewportController {
 
   public setState(state: CubeState): void {
     const wasBusy = this.isBusy()
+    this.queueGeneration += 1
+    this.sceneManager.cancelLayerTurn()
     this.moveQueue.length = 0
     this.isProcessingQueue = false
     this.currentState = cloneCubeState(state)
@@ -81,6 +84,8 @@ export class CubeViewportController {
 
   public renderSolvedCube(dimension: number): void {
     const wasBusy = this.isBusy()
+    this.queueGeneration += 1
+    this.sceneManager.cancelLayerTurn()
     this.currentState = createSolvedCubeState(dimension)
     this.moveQueue.length = 0
     this.isProcessingQueue = false
@@ -92,7 +97,7 @@ export class CubeViewportController {
 
   public setStepDelay(stepDelayMs: number): void {
     if (Number.isFinite(stepDelayMs) && stepDelayMs >= 80) {
-      this.stepDelayMs = stepDelayMs
+      this.turnAnimationMs = stepDelayMs
     }
   }
 
@@ -141,27 +146,41 @@ export class CubeViewportController {
     }
 
     if (!this.isProcessingQueue) {
-      this.processQueue()
+      this.isProcessingQueue = true
+      void this.processQueue(this.queueGeneration)
     }
   }
 
-  private processQueue(): void {
-    const nextQueueItem = this.moveQueue.shift()
-    if (!nextQueueItem) {
-      this.isProcessingQueue = false
-      this.onQueueStateChanged?.(false)
-      return
+  private async processQueue(generation: number): Promise<void> {
+    while (generation === this.queueGeneration) {
+      const nextQueueItem = this.moveQueue.shift()
+      if (!nextQueueItem) {
+        this.isProcessingQueue = false
+        this.onQueueStateChanged?.(false)
+        return
+      }
+
+      const completed = await this.sceneManager.animateLayerTurn(
+        nextQueueItem.move,
+        this.currentState.dimension,
+        this.turnAnimationMs,
+      )
+      if (generation !== this.queueGeneration) {
+        return
+      }
+
+      if (!completed) {
+        this.moveQueue.length = 0
+        this.isProcessingQueue = false
+        this.onQueueStateChanged?.(false)
+        return
+      }
+
+      this.currentState = applyMove(this.currentState, nextQueueItem.move)
+      this.renderCurrentState()
+      this.onMoveApplied?.(this.currentState, nextQueueItem.move, nextQueueItem.countTowardsStats)
+      nextQueueItem.onComplete?.()
     }
-
-    this.isProcessingQueue = true
-    this.currentState = applyMove(this.currentState, nextQueueItem.move)
-    this.renderCurrentState()
-    this.onMoveApplied?.(this.currentState, nextQueueItem.move, nextQueueItem.countTowardsStats)
-    nextQueueItem.onComplete?.()
-
-    window.setTimeout(() => {
-      this.processQueue()
-    }, this.stepDelayMs)
   }
 
   private renderCurrentState(): void {
@@ -179,6 +198,9 @@ export class CubeViewportController {
   }
 
   public dispose(): void {
+    this.queueGeneration += 1
+    this.moveQueue.length = 0
+    this.isProcessingQueue = false
     this.interactionController.dispose()
     this.sceneManager.dispose()
   }
