@@ -11,8 +11,8 @@ describe('createSolvedCubeState', () => {
       ['W', 'W'],
     ])
     expect(cube.faces.F).toEqual([
-      ['G', 'G'],
-      ['G', 'G'],
+      ['R', 'R'],
+      ['R', 'R'],
     ])
   })
 
@@ -20,7 +20,7 @@ describe('createSolvedCubeState', () => {
     const cube = createSolvedCubeState(3)
 
     expect(cube.dimension).toBe(3)
-    expect(cube.faces.R[1][1]).toBe('R')
+    expect(cube.faces.R[1][1]).toBe('G')
     expect(cube.faces.B[2][0]).toBe('B')
   })
 
