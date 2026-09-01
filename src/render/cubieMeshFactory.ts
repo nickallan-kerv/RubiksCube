@@ -1,6 +1,7 @@
 import { BoxGeometry, Color, Group, Mesh, MeshStandardMaterial, type Material } from 'three'
 import type { FaceName } from '../domain/cubeNotation'
 import type { CubeState, StickerColor } from '../domain/cubeState'
+import { setCubieCoordinate } from './cubeTurnAnimation'
 
 const FACE_ORDER: FaceName[] = ['R', 'L', 'U', 'D', 'F', 'B']
 
@@ -45,6 +46,7 @@ export function createCubeGroupFromState(state: CubeState): Group {
 
         const cubie = new Mesh(CUBIE_GEOMETRY, faceMaterials as Material[])
         cubie.position.set((x - offset) * spacing, (y - offset) * spacing, (z - offset) * spacing)
+        setCubieCoordinate(cubie, { x, y, z })
         group.add(cubie)
       }
     }
