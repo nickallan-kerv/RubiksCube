@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import { Vector3 } from 'three'
 import { createMove } from '../domain/cubeNotation'
 import { createSolvedCubeState } from '../domain/cubeState'
 import { createCubeGroupFromState } from './cubieMeshFactory'
@@ -20,5 +21,14 @@ describe('createCubeGroupFromState animation metadata', () => {
 
     expect(group.children.filter((cubie) => isCubieInTurnLayer(cubie, outer))).toHaveLength(16)
     expect(group.children.filter((cubie) => isCubieInTurnLayer(cubie, inner))).toHaveLength(12)
+  })
+
+  it('maps the cube upper face to world positive Z', () => {
+    const group = createCubeGroupFromState(createSolvedCubeState(3))
+    const worldUp = new Vector3(0, 1, 0).applyQuaternion(group.quaternion)
+
+    expect(worldUp.x).toBeCloseTo(0)
+    expect(worldUp.y).toBeCloseTo(0)
+    expect(worldUp.z).toBeCloseTo(1)
   })
 })
