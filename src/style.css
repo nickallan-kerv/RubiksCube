@@ -34,55 +34,51 @@ body {
 
 #app {
   min-height: 100svh;
-  padding: 1.2rem;
+  padding: clamp(0.65rem, 2vw, 1.2rem);
 }
 
 .app-shell {
   max-width: 1180px;
   margin: 0 auto;
-  background: linear-gradient(180deg, var(--cream), var(--panel));
-  border: 1px solid var(--line);
-  border-radius: calc(var(--radius) + 6px);
-  box-shadow: var(--shadow);
-  padding: clamp(1rem, 2vw, 1.7rem);
 }
 
 .top-bar {
   display: flex;
-  align-items: end;
+  align-items: center;
   justify-content: space-between;
   gap: 1rem;
-  margin-bottom: 1rem;
+  margin-bottom: 0.75rem;
 }
 
-.kicker {
-  margin: 0;
-  font-family: 'IBM Plex Mono', Consolas, monospace;
-  font-size: 0.78rem;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  color: var(--muted);
+.title-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  min-width: 0;
 }
 
 h1 {
-  margin: 0.25rem 0 0;
-  font-size: clamp(1.6rem, 3vw, 2.7rem);
+  margin: 0;
+  font-size: clamp(1.35rem, 3vw, 2.15rem);
   line-height: 1.05;
+  white-space: nowrap;
+}
+
+.title-controls select {
+  min-width: 0;
+  max-width: 11rem;
+  padding: 0.48rem 0.6rem;
+  border: 1px solid #b9c8b5;
+  border-radius: 8px;
+  background: #fffef7;
+  font: inherit;
 }
 
 .status-strip {
-  display: flex;
-  gap: 0.5rem;
-  flex-wrap: wrap;
-}
-
-.status-strip span {
-  padding: 0.35rem 0.65rem;
-  border: 1px solid var(--line);
-  border-radius: 999px;
   font-family: 'IBM Plex Mono', Consolas, monospace;
   font-size: 0.83rem;
-  background: #f3ffe7;
+  white-space: nowrap;
+  min-height: 1.25rem;
 }
 
 .workspace {
@@ -91,30 +87,11 @@ h1 {
   gap: 1rem;
 }
 
-.control-panel,
-.scene-card {
-  border: 1px solid var(--line);
-  border-radius: var(--radius);
-  background: #fff;
-}
-
 .control-panel {
-  padding: 1rem;
+  padding: 0;
   display: flex;
   flex-direction: column;
   gap: 0.6rem;
-}
-
-.control-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.6rem;
-}
-
-.control-row label {
-  margin: 0;
-  white-space: nowrap;
 }
 
 .control-panel label {
@@ -132,11 +109,6 @@ h1 {
 
 .control-panel select {
   background: #fffef7;
-}
-
-.control-row select {
-  flex: 1;
-  min-width: 120px;
 }
 
 .button-row {
@@ -317,11 +289,11 @@ h1 {
 }
 
 .scene-card {
-  padding: 1rem;
+  padding: 0;
 }
 
 .canvas-placeholder {
-  min-height: clamp(280px, 60vh, 620px);
+  height: clamp(300px, 55vh, 560px);
   border-radius: calc(var(--radius) - 4px);
   border: 2px solid #d8d4c6;
   background:
@@ -340,12 +312,66 @@ h1 {
     grid-template-columns: 1fr;
   }
 
-  .top-bar {
-    align-items: start;
-    flex-direction: column;
+  .scene-card {
+    grid-row: 1;
   }
 
-  .status-strip {
-    width: 100%;
+  .control-panel {
+    grid-row: 2;
+  }
+}
+
+@media (max-width: 560px) {
+  .top-bar {
+    align-items: stretch;
+    flex-direction: column;
+    gap: 0.45rem;
+  }
+
+  .title-controls {
+    justify-content: space-between;
+  }
+
+  .title-controls select {
+    flex: 1;
+  }
+
+  .canvas-placeholder {
+    height: clamp(250px, 44svh, 340px);
+  }
+}
+
+@media (orientation: landscape) and (max-height: 500px) {
+  #app {
+    padding: 0.5rem;
+  }
+
+  .top-bar {
+    margin-bottom: 0.5rem;
+  }
+
+  .workspace {
+    grid-template-columns: minmax(0, 1fr) minmax(190px, 210px);
+    gap: 0.65rem;
+  }
+
+  .scene-card {
+    grid-column: 1;
+    grid-row: 1;
+  }
+
+  .control-panel {
+    grid-column: 2;
+    grid-row: 1;
+  }
+
+  .canvas-placeholder {
+    height: calc(100svh - 4.75rem);
+    min-height: 260px;
+  }
+
+  .history-picker-wrap {
+    height: 112px;
+    min-height: 112px;
   }
 }
