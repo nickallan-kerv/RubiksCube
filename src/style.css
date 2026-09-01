@@ -105,19 +105,16 @@ h1 {
   gap: 0.6rem;
 }
 
-.controls-fieldset {
-  margin: 0;
-  padding: 0;
-  border: 0;
+.control-row {
   display: flex;
-  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
   gap: 0.6rem;
 }
 
-.controls-fieldset legend {
-  font-size: 0.9rem;
-  color: var(--muted);
-  margin-bottom: 0.1rem;
+.control-row label {
+  margin: 0;
+  white-space: nowrap;
 }
 
 .control-panel label {
@@ -126,7 +123,6 @@ h1 {
 }
 
 .control-panel select,
-.control-panel input,
 .control-panel button {
   font: inherit;
   border-radius: 12px;
@@ -134,9 +130,19 @@ h1 {
   padding: 0.68rem 0.72rem;
 }
 
-.control-panel select,
-.control-panel input {
+.control-panel select {
   background: #fffef7;
+}
+
+.control-row select {
+  flex: 1;
+  min-width: 120px;
+}
+
+.button-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.5rem;
 }
 
 .control-panel button {
@@ -154,7 +160,6 @@ h1 {
 }
 
 .control-panel select:disabled,
-.control-panel input:disabled,
 .control-panel button:disabled {
   opacity: 0.6;
   cursor: not-allowed;
@@ -164,6 +169,151 @@ h1 {
   margin: 0.2rem 0 0;
   font-size: 0.84rem;
   color: var(--muted);
+}
+
+.history-panel {
+  margin-top: 0.35rem;
+}
+
+.history-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.history-heading {
+  margin: 0;
+  font-size: 0.82rem;
+  font-family: 'IBM Plex Mono', Consolas, monospace;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.history-picker-wrap {
+  margin-top: 0.45rem;
+  min-height: 124px;
+  height: 124px;
+  position: relative;
+  overflow-x: hidden;
+  overflow-y: auto;
+  border-radius: 14px;
+  padding: 0 8px;
+  background:
+    radial-gradient(140% 70% at 50% 108%, rgba(0, 0, 0, 0.14) 0%, rgba(0, 0, 0, 0) 58%),
+    linear-gradient(180deg, rgba(248, 248, 248, 0.95) 0%, rgba(232, 232, 232, 0.95) 100%);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.7), inset 0 -1px 0 rgba(0, 0, 0, 0.08);
+}
+
+.history-picker-focus-overlay {
+  position: absolute;
+  left: 8px;
+  right: 8px;
+  top: 50%;
+  height: 40px;
+  transform: translateY(-50%);
+  border-radius: 10px;
+  pointer-events: none;
+  z-index: 1;
+  background: linear-gradient(180deg, rgba(241, 247, 255, 0.96) 0%, rgba(226, 238, 253, 0.96) 100%);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.16), inset 0 1px 0 rgba(255, 255, 255, 0.9);
+}
+
+.history-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.history-picker {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  z-index: 2;
+  justify-content: center;
+}
+
+.history-item {
+  width: 100%;
+  text-align: left;
+  border: 1px solid rgba(158, 164, 171, 0.66);
+  background: rgba(238, 240, 242, 0.94);
+  border-radius: 10px;
+  padding: 0.42rem 0.55rem;
+  font-family: 'IBM Plex Mono', Consolas, monospace;
+  font-size: 0.77rem;
+  color: #4c535b;
+  opacity: 0.72;
+  transform: translateY(0);
+  transition:
+    opacity 0.22s ease,
+    color 0.22s ease,
+    border-color 0.22s ease,
+    background 0.22s ease,
+    transform 0.22s ease,
+    box-shadow 0.22s ease;
+}
+
+.history-item:not(.is-active) {
+  color: #5f666d;
+  background: rgba(232, 235, 238, 0.96);
+  border-color: rgba(152, 158, 165, 0.72);
+  opacity: 0.62;
+  box-shadow: none;
+}
+
+.history-item.is-active {
+  color: #4e2500;
+  opacity: 1;
+  border-color: #d78f42;
+  background: linear-gradient(180deg, rgba(255, 216, 160, 0.98) 0%, rgba(246, 161, 74, 0.98) 100%);
+  box-shadow: 0 6px 14px rgba(191, 109, 33, 0.24), inset 0 1px 0 rgba(255, 247, 230, 0.72);
+  transform: translateY(-1px);
+  font-weight: 600;
+}
+
+.history-item.is-active:disabled {
+  opacity: 1;
+  filter: none;
+}
+
+.history-item:disabled:not(.is-active) {
+  opacity: 0.45;
+}
+
+.history-item:not(:disabled) {
+  cursor: pointer;
+}
+
+.history-empty {
+  border: 1px dashed rgba(145, 160, 147, 0.7);
+  background: rgba(255, 255, 255, 0.72);
+  border-radius: 10px;
+  padding: 0.4rem 0.55rem;
+  font-size: 0.79rem;
+  color: var(--muted);
+}
+
+.debug-panel {
+  margin-top: 0.45rem;
+}
+
+.debug-output {
+  margin: 0.35rem 0 0;
+  border: 1px solid #d8d2c0;
+  border-radius: 10px;
+  background: #fffdf5;
+  padding: 0.5rem 0.55rem;
+  font-family: 'IBM Plex Mono', Consolas, monospace;
+  font-size: 0.73rem;
+  line-height: 1.35;
+  color: #3e483f;
+  min-height: 84px;
+  white-space: pre-wrap;
 }
 
 .scene-card {
