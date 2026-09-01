@@ -3,7 +3,7 @@ import { applyMove } from '../domain/cubeMoveEngine'
 import { createMove, type CubeMove } from '../domain/cubeNotation'
 import { type Mesh } from 'three'
 import { createCubeGroupFromState } from './cubieMeshFactory'
-import { FaceTurnInteractionController } from './faceTurnInteractionController'
+import { FaceTurnInteractionController, type InteractionDebugSnapshot } from './faceTurnInteractionController'
 import { ThreeSceneManager } from './threeSceneManager'
 import type { CubeState } from '../domain/cubeState'
 
@@ -20,6 +20,7 @@ interface PlayMoveOptions {
 
 type MoveAppliedHandler = (state: CubeState, move: CubeMove, countTowardsStats: boolean) => void
 type QueueStateHandler = (isBusy: boolean) => void
+type InteractionDebugHandler = (snapshot: InteractionDebugSnapshot) => void
 
 export class CubeViewportController {
   private readonly sceneManager: ThreeSceneManager
@@ -30,6 +31,7 @@ export class CubeViewportController {
   private stepDelayMs = 240
   private onMoveApplied: MoveAppliedHandler | null = null
   private onQueueStateChanged: QueueStateHandler | null = null
+  private onInteractionDebug: InteractionDebugHandler | null = null
 
   public constructor(container: HTMLElement) {
     this.sceneManager = new ThreeSceneManager(container)
@@ -39,6 +41,7 @@ export class CubeViewportController {
       () => this.getTurnTargets(),
       (move) => this.playMoves([move], { countTowardsStats: true }),
       () => !this.isBusy(),
+      (snapshot) => this.onInteractionDebug?.(snapshot),
       () => this.sceneManager.requestRender(),
     )
   }
@@ -52,8 +55,28 @@ export class CubeViewportController {
     handler(this.isBusy())
   }
 
+  public setOnInteractionDebug(handler: InteractionDebugHandler): void {
+    this.onInteractionDebug = handler
+  }
+
   public isBusy(): boolean {
     return this.isProcessingQueue || this.moveQueue.length > 0
+  }
+
+  public getCurrentState(): CubeState {
+    return cloneCubeState(this.currentState)
+  }
+
+  public setState(state: CubeState): void {
+    const wasBusy = this.isBusy()
+    this.moveQueue.length = 0
+    this.isProcessingQueue = false
+    this.currentState = cloneCubeState(state)
+    this.renderCurrentState()
+
+    if (wasBusy) {
+      this.onQueueStateChanged?.(false)
+    }
   }
 
   public renderSolvedCube(dimension: number): void {
@@ -158,5 +181,19 @@ export class CubeViewportController {
   public dispose(): void {
     this.interactionController.dispose()
     this.sceneManager.dispose()
+  }
+}
+
+function cloneCubeState(state: CubeState): CubeState {
+  return {
+    dimension: state.dimension,
+    faces: {
+      U: state.faces.U.map((row) => [...row]),
+      D: state.faces.D.map((row) => [...row]),
+      L: state.faces.L.map((row) => [...row]),
+      R: state.faces.R.map((row) => [...row]),
+      F: state.faces.F.map((row) => [...row]),
+      B: state.faces.B.map((row) => [...row]),
+    },
   }
 }
