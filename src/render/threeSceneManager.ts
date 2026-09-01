@@ -35,16 +35,20 @@ export class ThreeSceneManager {
 
     this.contentGroup = null
 
-    const ambientLight = new AmbientLight('#ffffff', 0.7)
-    const keyLight = new DirectionalLight('#ffffff', 0.9)
-    keyLight.position.set(7, 10, 6)
+    const ambientLight = new AmbientLight('#ffffff', 0.35)
+    const keyLight = new DirectionalLight('#fffdf8', 1.15)
+    keyLight.position.set(-6, -8, 10)
 
-    const fillLight = new DirectionalLight('#ffd9ac', 0.35)
-    fillLight.position.set(-8, 5, -6)
+    const fillLight = new DirectionalLight('#eef4ff', 0.7)
+    fillLight.position.set(8, -3, 6)
+
+    const rimLight = new DirectionalLight('#ffffff', 0.85)
+    rimLight.position.set(1, 9, 8)
 
     this.scene.add(ambientLight)
     this.scene.add(keyLight)
     this.scene.add(fillLight)
+    this.scene.add(rimLight)
 
     this.resizeObserver = new ResizeObserver(() => this.resize())
     this.resizeObserver.observe(this.container)
