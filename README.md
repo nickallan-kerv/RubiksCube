@@ -6,9 +6,9 @@ The result is a browser-based Rubik's Cube experience with smooth 3D rendering, 
 
 ## Live Links
 
-- Play the project (GitHub Pages): https://nickallan-kerv.github.io/RubiksCube/
+- Play the project (GitHub Pages): https://nickallan-kerv.github.io/rubikscube/
 - Delivery Kanban board: https://github.com/users/nickallan-kerv/projects/5
-- Repository: https://github.com/nickallan-kerv/RubiksCube
+- Repository: https://github.com/nickallan-kerv/rubikscube
 
 ## Why This Project Exists
 
