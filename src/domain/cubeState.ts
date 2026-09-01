@@ -13,8 +13,8 @@ const SOLVED_FACE_COLORS: Record<FaceName, StickerColor> = {
   U: 'W',
   D: 'Y',
   L: 'O',
-  R: 'R',
-  F: 'G',
+  R: 'G',
+  F: 'R',
   B: 'B',
 }
 
