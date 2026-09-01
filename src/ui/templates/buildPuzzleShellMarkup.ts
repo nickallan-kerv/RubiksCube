@@ -21,7 +21,7 @@ export function buildPuzzleShellMarkup(config: PuzzleRuntimeConfig): string {
   <main class="app-shell">
     <header class="top-bar">
       <div class="title-controls">
-        <h1>Rubiks Cube</h1>
+        <h1><span>Rubiks</span><span class="title-suffix"> Cube</span></h1>
         <select id="cube-size" name="cube-size" aria-label="Cube size">
           ${optionsMarkup}
         </select>
