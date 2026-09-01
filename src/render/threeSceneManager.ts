@@ -26,7 +26,7 @@ export class ThreeSceneManager {
 
     this.camera = new PerspectiveCamera(38, 1, 0.1, 100)
     this.camera.up.set(0, 0, 1)
-    this.camera.position.set(-6, -8, 7)
+    this.camera.position.set(-3.65, -4.9, 4.25)
     this.camera.lookAt(0, 0, 0)
 
     this.renderer = new WebGLRenderer({ antialias: true })
