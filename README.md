@@ -72,6 +72,16 @@ Open the local URL shown by Vite to interact with the cube.
 npm run test
 ```
 
+## Deploying To GitHub Pages
+
+Push the current `main` commit and wait for the matching Pages deployment:
+
+```powershell
+npm run deploy:pages
+```
+
+The helper verifies that `deploy-pages.yml` ran for the pushed commit. If the push event does not create a workflow run, it dispatches the workflow explicitly and waits for completion.
+
 ## Project Status
 
 This is an active experimentation project. Expect ongoing refinements in interaction quality, puzzle behavior, and delivery workflow patterns as the Copilot-assisted process evolves.
