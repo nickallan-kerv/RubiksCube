@@ -1,10 +1,12 @@
 import {
   AmbientLight,
-  Color,
+  Box3,
   DirectionalLight,
   Group,
   PerspectiveCamera,
   Scene,
+  Sphere,
+  Vector3,
   WebGLRenderer,
 } from 'three'
 import type { CubeMove } from '../domain/cubeNotation'
@@ -16,20 +18,20 @@ export class ThreeSceneManager {
   private readonly camera: PerspectiveCamera
   private readonly renderer: WebGLRenderer
   private contentGroup: Group | null
+  private fittedDimension: number | null = null
   private readonly resizeObserver: ResizeObserver
   private cancelActiveAnimation: (() => void) | null = null
 
   public constructor(container: HTMLElement) {
     this.container = container
     this.scene = new Scene()
-    this.scene.background = new Color('#f6f4ec')
 
     this.camera = new PerspectiveCamera(38, 1, 0.1, 100)
     this.camera.up.set(0, 0, 1)
     this.camera.position.set(-3.65, -4.9, 4.25)
     this.camera.lookAt(0, 0, 0)
 
-    this.renderer = new WebGLRenderer({ antialias: true })
+    this.renderer = new WebGLRenderer({ antialias: true, alpha: true })
     this.renderer.setPixelRatio(window.devicePixelRatio)
     this.container.appendChild(this.renderer.domElement)
 
@@ -57,12 +59,18 @@ export class ThreeSceneManager {
   }
 
   public setContent(group: Group): void {
+    const previousDimension = this.contentGroup?.userData.dimension ?? null
+
     if (this.contentGroup) {
       this.scene.remove(this.contentGroup)
     }
 
     this.contentGroup = group
     this.scene.add(group)
+    if (previousDimension !== group.userData.dimension || this.fittedDimension === null) {
+      this.fitContentToViewport()
+      this.fittedDimension = group.userData.dimension
+    }
     this.render()
   }
 
@@ -178,9 +186,43 @@ export class ThreeSceneManager {
     const height = Math.max(1, this.container.clientHeight)
 
     this.camera.aspect = width / height
+    this.updateLandscapeViewOffset(width, height)
     this.camera.updateProjectionMatrix()
     this.renderer.setSize(width, height, false)
+    if (this.contentGroup) {
+      this.fitContentToViewport()
+      this.fittedDimension = this.contentGroup.userData.dimension
+    }
     this.render()
+  }
+
+  private updateLandscapeViewOffset(width: number, height: number): void {
+    const isShortLandscape = window.matchMedia('(orientation: landscape) and (max-height: 500px)').matches
+    if (isShortLandscape) {
+      this.camera.setViewOffset(width, height, width / 6, 0, width, height)
+    } else {
+      this.camera.clearViewOffset()
+    }
+  }
+
+  private fitContentToViewport(): void {
+    if (!this.contentGroup) {
+      return
+    }
+
+    const bounds = new Box3().setFromObject(this.contentGroup)
+    const sphere = bounds.getBoundingSphere(new Sphere())
+    const dimension = this.contentGroup.userData.dimension ?? 2
+    const verticalOffset = 0.3 * (dimension / 2)
+    const framingTarget = sphere.center.clone().add(new Vector3(0, 0, -verticalOffset))
+    const verticalFieldOfView = (this.camera.fov * Math.PI) / 180
+    const horizontalFieldOfView = 2 * Math.atan(Math.tan(verticalFieldOfView / 2) * this.camera.aspect)
+    const limitingFieldOfView = Math.min(verticalFieldOfView, horizontalFieldOfView)
+    const distance = (sphere.radius / Math.sin(limitingFieldOfView / 2)) * 1.02
+    const viewDirection = this.camera.position.clone().sub(framingTarget).normalize()
+
+    this.camera.position.copy(framingTarget).add(viewDirection.multiplyScalar(distance))
+    this.camera.lookAt(framingTarget)
   }
 
   private render(): void {
