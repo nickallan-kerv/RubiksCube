@@ -1,6 +1,6 @@
 import { StaticPuzzleConfigProvider } from '../config/puzzleConfigProvider'
 import { getDefaultPreset } from '../config/puzzleConfigProvider'
-import { moveToNotation } from '../domain/cubeNotation'
+import { invertMove, moveToNotation, type CubeMove } from '../domain/cubeNotation'
 import { isSolvedCubeState } from '../domain/cubeSolved'
 import { PuzzleShellRenderer } from '../ui/PuzzleShellRenderer'
 import { CubeViewportController } from '../render/cubeViewportController'
@@ -12,6 +12,7 @@ const PERSISTED_SIZE_KEY = 'rubiksCube.selectedDimension'
 interface MoveHistoryEntry {
   label: string
   state: CubeState
+  move: CubeMove | null
   moveCount: number
   elapsedSeconds: number
   solved: boolean
@@ -168,7 +169,7 @@ export function bootstrapApp(): void {
     renderStats()
   }
 
-  const renderMoveHistory = (): void => {
+  const renderMoveHistory = (scrollBehavior: ScrollBehavior = 'auto'): void => {
     moveHistoryList.innerHTML = ''
 
     if (historyEntries.length === 0) {
@@ -204,7 +205,7 @@ export function bootstrapApp(): void {
     const activeItem = moveHistoryList.querySelector<HTMLButtonElement>('button.history-item.is-active')
     if (activeItem) {
       const targetTop = activeItem.offsetTop - (moveHistoryPicker.clientHeight - activeItem.offsetHeight) / 2
-      moveHistoryPicker.scrollTop = Math.max(0, targetTop)
+      moveHistoryPicker.scrollTo({ top: Math.max(0, targetTop), behavior: scrollBehavior })
     }
   }
 
@@ -213,6 +214,7 @@ export function bootstrapApp(): void {
       {
         label,
         state: cloneCubeState(state),
+        move: null,
         moveCount,
         elapsedSeconds,
         solved: isSolvedCubeState(state),
@@ -222,11 +224,12 @@ export function bootstrapApp(): void {
     renderMoveHistory()
   }
 
-  const appendMoveHistoryEntry = (label: string, state: CubeState): void => {
+  const appendMoveHistoryEntry = (label: string, state: CubeState, move: CubeMove): void => {
     const truncatedHistory = historyEntries.slice(0, currentHistoryIndex + 1)
     truncatedHistory.push({
       label,
       state: cloneCubeState(state),
+      move,
       moveCount,
       elapsedSeconds,
       solved: isSolvedCubeState(state),
@@ -255,7 +258,7 @@ export function bootstrapApp(): void {
       return
     }
 
-    viewportController.setState(checkpoint.state)
+    const historyMoves = getHistoryTransitionMoves(currentHistoryIndex, historyIndex)
     currentHistoryIndex = historyIndex
     moveCount = checkpoint.moveCount
     elapsedSeconds = checkpoint.elapsedSeconds
@@ -273,7 +276,28 @@ export function bootstrapApp(): void {
       : 'Restored to selected checkpoint.'
 
     renderStats()
-    renderMoveHistory()
+    renderMoveHistory('smooth')
+
+    if (historyMoves.length === 0) {
+      viewportController.setState(checkpoint.state)
+      return
+    }
+
+    viewportController.playMoves(historyMoves, {
+      countTowardsStats: false,
+      onComplete: () => viewportController.setState(checkpoint.state),
+    })
+  }
+
+  const getHistoryTransitionMoves = (fromIndex: number, toIndex: number): CubeMove[] => {
+    if (toIndex > fromIndex) {
+      return historyEntries.slice(fromIndex + 1, toIndex + 1).flatMap((entry) => (entry.move ? [entry.move] : []))
+    }
+
+    return historyEntries
+      .slice(toIndex + 1, fromIndex + 1)
+      .reverse()
+      .flatMap((entry) => (entry.move ? [invertMove(entry.move)] : []))
   }
 
   const moveHistorySelectionBySteps = (steps: number): void => {
@@ -480,7 +504,7 @@ export function bootstrapApp(): void {
         startTimer()
       }
 
-      appendMoveHistoryEntry(moveToNotation(_move), state)
+      appendMoveHistoryEntry(moveToNotation(_move), state, _move)
     }
 
     renderStats()
