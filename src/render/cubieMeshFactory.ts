@@ -41,6 +41,7 @@ const STICKER_MATERIALS = Object.fromEntries(
 
 export function createCubeGroupFromState(state: CubeState): Group {
   const group = new Group()
+  group.userData.dimension = state.dimension
   const spacing = 1
   const offset = (state.dimension - 1) / 2
 
